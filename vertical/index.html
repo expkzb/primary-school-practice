@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>竖式计算练习</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app">
+      <section class="practice" aria-labelledby="page-title">
+        <div class="topbar">
+          <div>
+            <p class="eyebrow">每日小任务</p>
+            <h1 id="page-title">竖式计算</h1>
+          </div>
+          <div class="scoreboard" aria-label="练习进度">
+            <div>
+              <span class="score-label">进度</span>
+              <strong><span id="currentIndex">1</span>/10</strong>
+            </div>
+            <div>
+              <span class="score-label">答对</span>
+              <strong id="correctCount">0</strong>
+            </div>
+            <div>
+              <span class="score-label">星星</span>
+              <strong id="stars">0</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="workspace">
+          <section class="question-panel" aria-label="今日题目">
+            <div class="quest-path" id="questPath" aria-hidden="true"></div>
+            <p class="stage" id="stageLabel">不进位加法</p>
+            <div class="vertical-sum" id="verticalSum" aria-label="竖式题目"></div>
+            <div class="feedback" id="feedback" role="status" aria-live="polite">选一个答案。</div>
+            <div class="place-hint" id="placeHint"></div>
+          </section>
+
+          <section class="answer-panel" aria-label="选择答案">
+            <div class="answer-grid" id="answerGrid"></div>
+            <button class="secondary" id="restartButton" type="button">重新开始今日练习</button>
+          </section>
+        </div>
+
+        <section class="summary" id="summary" aria-labelledby="summaryTitle" hidden>
+          <h2 id="summaryTitle">今日完成</h2>
+          <p id="summaryText"></p>
+          <p id="parentTip"></p>
+          <button class="primary" id="againButton" type="button">再练一组</button>
+        </section>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

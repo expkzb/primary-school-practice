@@ -1,5 +1,5 @@
 const totalQuestions = 10;
-const wrongKey = "arithmeticWrongFacts";
+const wrongKey = "verticalWrongFacts";
 
 const state = {
   questions: [],
@@ -17,9 +17,9 @@ const els = {
   stars: document.querySelector("#stars"),
   questPath: document.querySelector("#questPath"),
   stageLabel: document.querySelector("#stageLabel"),
-  questionText: document.querySelector("#questionText"),
+  verticalSum: document.querySelector("#verticalSum"),
   feedback: document.querySelector("#feedback"),
-  beads: document.querySelector("#beads"),
+  placeHint: document.querySelector("#placeHint"),
   answerGrid: document.querySelector("#answerGrid"),
   restartButton: document.querySelector("#restartButton"),
   summary: document.querySelector("#summary"),
@@ -62,44 +62,40 @@ function makeQuestion(operator, left, right, stage) {
   };
 }
 
-function makeWarmup() {
-  if (Math.random() < 0.5) {
-    const left = randomInt(1, 8);
-    const right = randomInt(1, 10 - left);
-    return makeQuestion("+", left, right, "热身题");
-  }
-
-  const left = randomInt(3, 10);
-  const right = randomInt(1, left - 1);
-  return makeQuestion("-", left, right, "热身题");
-}
-
-function makeBridgeTen() {
-  const pairs = [
-    [8, 2],
-    [7, 3],
-    [6, 4],
-    [9, 1],
-    [5, 5]
-  ];
-  const pair = pairs[randomInt(0, pairs.length - 1)];
-  return makeQuestion("+", pair[0], pair[1], "凑十题");
+function makeNoCarryAdd() {
+  const tens = randomInt(1, 6);
+  const ones = randomInt(1, 5);
+  const addTens = randomInt(1, 3);
+  const addOnes = randomInt(1, 9 - ones);
+  return makeQuestion("+", tens * 10 + ones, addTens * 10 + addOnes, "不进位加法");
 }
 
 function makeCarryAdd() {
-  const left = randomInt(6, 9);
-  const right = randomInt(4, 9);
-  return makeQuestion("+", left, right, "进位加法");
+  const tens = randomInt(1, 5);
+  const ones = randomInt(5, 9);
+  const addTens = randomInt(1, 3);
+  const addOnes = randomInt(10 - ones, 9);
+  return makeQuestion("+", tens * 10 + ones, addTens * 10 + addOnes, "进位加法");
+}
+
+function makeNoBorrowSubtract() {
+  const tens = randomInt(4, 9);
+  const ones = randomInt(3, 9);
+  const subTens = randomInt(1, tens - 1);
+  const subOnes = randomInt(1, ones);
+  return makeQuestion("-", tens * 10 + ones, subTens * 10 + subOnes, "不退位减法");
 }
 
 function makeBorrowSubtract() {
-  const answer = randomInt(3, 9);
-  const right = randomInt(4, 9);
-  return makeQuestion("-", answer + right, right, "退位减法");
+  const tens = randomInt(4, 9);
+  const ones = randomInt(0, 4);
+  const subTens = randomInt(1, tens - 1);
+  const subOnes = randomInt(ones + 1, 9);
+  return makeQuestion("-", tens * 10 + ones, subTens * 10 + subOnes, "退位减法");
 }
 
 function makeCore() {
-  const makers = [makeBridgeTen, makeCarryAdd, makeBorrowSubtract];
+  const makers = [makeCarryAdd, makeNoBorrowSubtract, makeBorrowSubtract];
   return makers[randomInt(0, makers.length - 1)]();
 }
 
@@ -112,9 +108,9 @@ function makeReviewQuestions() {
 
 function buildQuestionSet() {
   const questions = [
-    makeWarmup(),
-    makeWarmup(),
-    makeWarmup(),
+    makeNoCarryAdd(),
+    makeNoBorrowSubtract(),
+    makeNoCarryAdd(),
     makeCore(),
     makeCore(),
     makeCore(),
@@ -130,17 +126,32 @@ function buildQuestionSet() {
   return questions.slice(0, totalQuestions);
 }
 
-function renderAnswerButtons() {
+function makeChoices(answer) {
+  const choices = new Set([answer]);
+
+  while (choices.size < 6) {
+    const offset = randomInt(-12, 12);
+    const value = answer + offset;
+
+    if (value >= 0 && value <= 99 && value !== answer) {
+      choices.add(value);
+    }
+  }
+
+  return shuffle([...choices]);
+}
+
+function renderAnswerButtons(question) {
   els.answerGrid.innerHTML = "";
 
-  for (let value = 0; value <= 20; value += 1) {
+  makeChoices(question.answer).forEach((value) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "answer-button";
     button.textContent = value;
     button.addEventListener("click", () => chooseAnswer(value));
     els.answerGrid.append(button);
-  }
+  });
 }
 
 function renderPath() {
@@ -154,24 +165,31 @@ function renderPath() {
   }
 }
 
-function renderBeads(question, showHint) {
-  els.beads.innerHTML = "";
+function numberDigits(value) {
+  return String(value).padStart(2, " ").split("");
+}
 
-  const count = question.operator === "+" ? question.left + question.right : question.left;
-  for (let index = 0; index < count; index += 1) {
-    const bead = document.createElement("span");
-    bead.className = "bead";
+function renderVerticalSum(question) {
+  const topDigits = numberDigits(question.left);
+  const bottomDigits = numberDigits(question.right);
+  els.verticalSum.innerHTML = "";
 
-    if (question.operator === "+" && index >= question.left) {
-      bead.classList.add("second");
-    }
+  const top = document.createElement("div");
+  top.className = "sum-row";
+  top.innerHTML = `<span></span><span>${topDigits[0]}</span><span>${topDigits[1]}</span>`;
 
-    if (question.operator === "-" && showHint && index >= question.left - question.right) {
-      bead.classList.add("removed");
-    }
+  const bottom = document.createElement("div");
+  bottom.className = "sum-row operator-row";
+  bottom.innerHTML = `<span>${question.operator}</span><span>${bottomDigits[0]}</span><span>${bottomDigits[1]}</span>`;
 
-    els.beads.append(bead);
-  }
+  const line = document.createElement("div");
+  line.className = "sum-line";
+
+  const answer = document.createElement("div");
+  answer.className = "sum-row answer-row";
+  answer.innerHTML = "<span></span><span>?</span><span>?</span>";
+
+  els.verticalSum.append(top, bottom, line, answer);
 }
 
 function currentQuestion() {
@@ -193,27 +211,46 @@ function showQuestion() {
   els.correctCount.textContent = state.correct;
   els.stars.textContent = state.stars;
   els.stageLabel.textContent = question.stage;
-  els.questionText.textContent = `${question.left} ${question.operator} ${question.right} = ?`;
   els.feedback.className = "feedback";
-  els.feedback.textContent = "选一个答案。";
+  els.feedback.textContent = "先算个位，再算十位，选一个答案。";
+  els.placeHint.textContent = "";
   els.summary.hidden = true;
   renderPath();
-  renderBeads(question, false);
+  renderVerticalSum(question);
+  renderAnswerButtons(question);
   setAnswerButtonsDisabled(false);
 }
 
 function hintText(question) {
-  if (question.operator === "+" && question.left + question.right >= 10) {
-    const need = 10 - question.left;
-    const rest = question.right - need;
-    return `差一点。先想 ${question.left} 加 ${need} 变成 10，再加 ${rest}。`;
+  const leftOnes = question.left % 10;
+  const rightOnes = question.right % 10;
+
+  if (question.operator === "+" && leftOnes + rightOnes >= 10) {
+    return `个位 ${leftOnes} + ${rightOnes} 满 10，要向十位进 1。`;
   }
 
-  if (question.operator === "-") {
-    return `再想想。先看一共有 ${question.left} 个，拿走 ${question.right} 个，剩下几个？`;
+  if (question.operator === "-" && leftOnes < rightOnes) {
+    return `个位 ${leftOnes} 不够减 ${rightOnes}，向十位借 1 个十。`;
   }
 
-  return "再想想，可以数一数下面的小珠子。";
+  return "再算一次个位，再算十位。";
+}
+
+function placeHintText(question) {
+  const leftTens = Math.floor(question.left / 10);
+  const leftOnes = question.left % 10;
+  const rightTens = Math.floor(question.right / 10);
+  const rightOnes = question.right % 10;
+
+  if (question.operator === "+") {
+    const ones = leftOnes + rightOnes;
+    const carry = ones >= 10 ? 1 : 0;
+    return `个位得 ${ones % 10}${carry ? "，进 1" : ""}；十位是 ${leftTens} + ${rightTens}${carry ? " + 1" : ""}。`;
+  }
+
+  const borrow = leftOnes < rightOnes ? 1 : 0;
+  const ones = borrow ? leftOnes + 10 - rightOnes : leftOnes - rightOnes;
+  return `个位得 ${ones}${borrow ? "，十位少 1" : ""}；十位是 ${leftTens}${borrow ? " - 1" : ""} - ${rightTens}。`;
 }
 
 function rememberMiss(question) {
@@ -236,7 +273,7 @@ function chooseAnswer(value) {
     state.answeredWrongThisQuestion = true;
     els.feedback.className = "feedback wrong";
     els.feedback.textContent = hintText(question);
-    renderBeads(question, true);
+    els.placeHint.textContent = placeHintText(question);
     return;
   }
 
@@ -248,8 +285,9 @@ function chooseAnswer(value) {
   els.stars.textContent = state.stars;
   els.feedback.className = "feedback correct";
   els.feedback.textContent = state.answeredWrongThisQuestion ? "这次想对了。" : "答对了。";
+  els.placeHint.textContent = placeHintText(question);
 
-  window.setTimeout(nextQuestion, 650);
+  window.setTimeout(nextQuestion, 750);
 }
 
 function finishPractice() {
@@ -262,7 +300,7 @@ function finishPractice() {
   els.summaryText.textContent = `答对 ${state.correct} / ${totalQuestions} 题，正确率 ${rate}%，得到 ${state.stars} 颗星。`;
   els.parentTip.textContent = state.missed.length
     ? `家长提示：下一组会优先复习“${weakStage}”，答错的题会自动混入后续练习。`
-    : "家长提示：今天很稳，后续继续保持短时间练习。";
+    : "家长提示：今天竖式步骤很稳，后续继续保持短时间练习。";
   els.summary.hidden = false;
 }
 
@@ -289,5 +327,4 @@ function startPractice() {
 els.restartButton.addEventListener("click", startPractice);
 els.againButton.addEventListener("click", startPractice);
 
-renderAnswerButtons();
 startPractice();
