@@ -8,6 +8,7 @@ const state = {
   stars: 0,
   missed: [],
   answeredWrongThisQuestion: false,
+  activePlace: "ones",
   locked: false
 };
 
@@ -20,7 +21,9 @@ const els = {
   verticalSum: document.querySelector("#verticalSum"),
   feedback: document.querySelector("#feedback"),
   placeHint: document.querySelector("#placeHint"),
-  answerGrid: document.querySelector("#answerGrid"),
+  digitGrid: document.querySelector("#digitGrid"),
+  clearButton: document.querySelector("#clearButton"),
+  submitButton: document.querySelector("#submitButton"),
   restartButton: document.querySelector("#restartButton"),
   summary: document.querySelector("#summary"),
   summaryText: document.querySelector("#summaryText"),
@@ -126,32 +129,17 @@ function buildQuestionSet() {
   return questions.slice(0, totalQuestions);
 }
 
-function makeChoices(answer) {
-  const choices = new Set([answer]);
+function renderDigitButtons() {
+  els.digitGrid.innerHTML = "";
 
-  while (choices.size < 6) {
-    const offset = randomInt(-12, 12);
-    const value = answer + offset;
-
-    if (value >= 0 && value <= 99 && value !== answer) {
-      choices.add(value);
-    }
-  }
-
-  return shuffle([...choices]);
-}
-
-function renderAnswerButtons(question) {
-  els.answerGrid.innerHTML = "";
-
-  makeChoices(question.answer).forEach((value) => {
+  for (let value = 0; value <= 9; value += 1) {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "answer-button";
+    button.className = "digit-button";
     button.textContent = value;
-    button.addEventListener("click", () => chooseAnswer(value));
-    els.answerGrid.append(button);
-  });
+    button.addEventListener("click", () => fillDigit(value));
+    els.digitGrid.append(button);
+  }
 }
 
 function renderPath() {
@@ -187,19 +175,120 @@ function renderVerticalSum(question) {
 
   const answer = document.createElement("div");
   answer.className = "sum-row answer-row";
-  answer.innerHTML = "<span></span><span>?</span><span>?</span>";
+  answer.innerHTML = `
+    <span></span>
+    <span>
+      <input id="answerTens" class="digit-input" type="text" inputmode="numeric" maxlength="1" aria-label="答案十位">
+    </span>
+    <span>
+      <input id="answerOnes" class="digit-input" type="text" inputmode="numeric" maxlength="1" aria-label="答案个位">
+    </span>
+  `;
 
   els.verticalSum.append(top, bottom, line, answer);
+  wireDigitInputs();
 }
 
 function currentQuestion() {
   return state.questions[state.index];
 }
 
-function setAnswerButtonsDisabled(disabled) {
-  document.querySelectorAll(".answer-button").forEach((button) => {
+function answerInputs() {
+  return {
+    tens: document.querySelector("#answerTens"),
+    ones: document.querySelector("#answerOnes")
+  };
+}
+
+function answerValue() {
+  const inputs = answerInputs();
+
+  if (!inputs.tens?.value || !inputs.ones?.value) {
+    return null;
+  }
+
+  return Number(inputs.tens.value) * 10 + Number(inputs.ones.value);
+}
+
+function setActivePlace(place) {
+  state.activePlace = place;
+
+  const inputs = answerInputs();
+  inputs.tens?.classList.toggle("active", place === "tens");
+  inputs.ones?.classList.toggle("active", place === "ones");
+
+  if (!state.locked) {
+    inputs[place]?.focus();
+  }
+}
+
+function sanitizeDigit(value) {
+  const match = value.match(/\d/g);
+  return match ? match[match.length - 1] : "";
+}
+
+function handleDigitInput(input, place) {
+  if (state.locked) return;
+
+  input.value = sanitizeDigit(input.value);
+
+  if (input.value && place === "ones") {
+    setActivePlace("tens");
+    return;
+  }
+
+  setActivePlace(place);
+}
+
+function wireDigitInputs() {
+  const inputs = answerInputs();
+
+  inputs.tens.addEventListener("focus", () => setActivePlace("tens"));
+  inputs.ones.addEventListener("focus", () => setActivePlace("ones"));
+  inputs.tens.addEventListener("input", () => handleDigitInput(inputs.tens, "tens"));
+  inputs.ones.addEventListener("input", () => handleDigitInput(inputs.ones, "ones"));
+}
+
+function fillDigit(value) {
+  if (state.locked) return;
+
+  const inputs = answerInputs();
+  const input = inputs[state.activePlace];
+  input.value = String(value);
+
+  if (state.activePlace === "ones") {
+    setActivePlace("tens");
+    return;
+  }
+
+  setActivePlace("tens");
+}
+
+function clearAnswer() {
+  if (state.locked) return;
+
+  const inputs = answerInputs();
+  inputs.tens.value = "";
+  inputs.ones.value = "";
+  els.feedback.className = "feedback";
+  els.feedback.textContent = "先填个位，再填十位。";
+  els.placeHint.textContent = "";
+  setActivePlace("ones");
+}
+
+function setAnswerControlsDisabled(disabled) {
+  document.querySelectorAll(".digit-button").forEach((button) => {
     button.disabled = disabled;
   });
+
+  const inputs = answerInputs();
+  if (inputs.tens && inputs.ones) {
+    inputs.tens.disabled = disabled;
+    inputs.ones.disabled = disabled;
+  }
+
+  els.clearButton.disabled = disabled;
+  els.submitButton.disabled = disabled;
 }
 
 function showQuestion() {
@@ -212,13 +301,13 @@ function showQuestion() {
   els.stars.textContent = state.stars;
   els.stageLabel.textContent = question.stage;
   els.feedback.className = "feedback";
-  els.feedback.textContent = "先算个位，再算十位，选一个答案。";
+  els.feedback.textContent = "先算个位，填个位；再算十位，填十位。";
   els.placeHint.textContent = "";
   els.summary.hidden = true;
   renderPath();
   renderVerticalSum(question);
-  renderAnswerButtons(question);
-  setAnswerButtonsDisabled(false);
+  setAnswerControlsDisabled(false);
+  setActivePlace("ones");
 }
 
 function hintText(question) {
@@ -259,10 +348,17 @@ function rememberMiss(question) {
   saveWrongFacts(facts);
 }
 
-function chooseAnswer(value) {
+function submitAnswer() {
   if (state.locked) return;
 
   const question = currentQuestion();
+  const value = answerValue();
+
+  if (value === null) {
+    els.feedback.className = "feedback wrong";
+    els.feedback.textContent = "十位和个位都要填写。";
+    return;
+  }
 
   if (value !== question.answer) {
     if (!state.answeredWrongThisQuestion) {
@@ -280,7 +376,7 @@ function chooseAnswer(value) {
   state.correct += state.answeredWrongThisQuestion ? 0 : 1;
   state.stars += state.answeredWrongThisQuestion ? 1 : 2;
   state.locked = true;
-  setAnswerButtonsDisabled(true);
+  setAnswerControlsDisabled(true);
   els.correctCount.textContent = state.correct;
   els.stars.textContent = state.stars;
   els.feedback.className = "feedback correct";
@@ -295,7 +391,7 @@ function finishPractice() {
   const weakStage = state.missed[0]?.stage || "继续保持每天练习";
 
   state.locked = true;
-  setAnswerButtonsDisabled(true);
+  setAnswerControlsDisabled(true);
   renderPath();
   els.summaryText.textContent = `答对 ${state.correct} / ${totalQuestions} 题，正确率 ${rate}%，得到 ${state.stars} 颗星。`;
   els.parentTip.textContent = state.missed.length
@@ -324,7 +420,10 @@ function startPractice() {
   showQuestion();
 }
 
+els.clearButton.addEventListener("click", clearAnswer);
+els.submitButton.addEventListener("click", submitAnswer);
 els.restartButton.addEventListener("click", startPractice);
 els.againButton.addEventListener("click", startPractice);
 
+renderDigitButtons();
 startPractice();

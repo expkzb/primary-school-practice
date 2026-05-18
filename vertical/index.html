@@ -35,12 +35,16 @@
             <div class="quest-path" id="questPath" aria-hidden="true"></div>
             <p class="stage" id="stageLabel">不进位加法</p>
             <div class="vertical-sum" id="verticalSum" aria-label="竖式题目"></div>
-            <div class="feedback" id="feedback" role="status" aria-live="polite">选一个答案。</div>
+            <div class="feedback" id="feedback" role="status" aria-live="polite">填十位和个位。</div>
             <div class="place-hint" id="placeHint"></div>
           </section>
 
-          <section class="answer-panel" aria-label="选择答案">
-            <div class="answer-grid" id="answerGrid"></div>
+          <section class="answer-panel" aria-label="填写答案">
+            <div class="digit-grid" id="digitGrid" aria-label="数字键盘"></div>
+            <div class="answer-actions">
+              <button class="secondary" id="clearButton" type="button">清空</button>
+              <button class="primary" id="submitButton" type="button">提交答案</button>
+            </div>
             <button class="secondary" id="restartButton" type="button">重新开始今日练习</button>
           </section>
         </div>

@@ -196,10 +196,6 @@ h1 {
   border-radius: 999px;
 }
 
-.answer-row {
-  color: var(--blue);
-}
-
 .feedback,
 .place-hint {
   min-height: 58px;
@@ -241,13 +237,13 @@ h1 {
   gap: 16px;
 }
 
-.answer-grid {
+.digit-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
 }
 
-.answer-button {
+.digit-button {
   min-height: 76px;
   border: 1px solid #cfd7e6;
   border-radius: 8px;
@@ -258,15 +254,50 @@ h1 {
   cursor: pointer;
 }
 
-.answer-button:hover,
-.answer-button:focus-visible {
+.digit-button:hover,
+.digit-button:focus-visible {
   outline: 3px solid rgba(47, 111, 237, 0.22);
   border-color: var(--blue);
 }
 
-.answer-button:disabled {
+.digit-button:disabled {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+.digit-input {
+  width: 0.9em;
+  height: 1.05em;
+  padding: 0;
+  border: 2px solid #9ab8f5;
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--blue);
+  caret-color: transparent;
+  font: inherit;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+}
+
+.digit-input.active,
+.digit-input:focus {
+  border-color: var(--pink);
+  background: #fff7d8;
+  box-shadow:
+    0 0 0 5px rgba(245, 111, 155, 0.24),
+    inset 0 -8px 0 rgba(245, 200, 76, 0.42);
+  outline: 0;
+}
+
+.digit-input:disabled {
+  opacity: 0.75;
+}
+
+.answer-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
 }
 
 .primary,
@@ -356,12 +387,17 @@ h1 {
     padding: 18px 20px;
   }
 
-  .answer-grid {
+  .digit-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 8px;
   }
 
-  .answer-button {
+  .digit-button {
     min-height: 58px;
     font-size: 25px;
+  }
+
+  .answer-actions {
+    grid-template-columns: 1fr;
   }
 }
