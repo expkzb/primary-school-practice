@@ -1,0 +1,6 @@
+dist/
+clock-practice-standalone/
+*.zip
+*.log
+.DS_Store
+Thumbs.db

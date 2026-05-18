@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>认识时钟练习</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app">
+      <section class="practice" aria-labelledby="page-title">
+        <div class="topbar">
+          <div>
+            <p class="eyebrow">小小钟表师</p>
+            <h1 id="page-title">现在是几点几分？</h1>
+          </div>
+          <div class="scoreboard" aria-label="积分">
+            <div>
+              <span class="score-label">积分</span>
+              <strong id="score">0</strong>
+            </div>
+            <div>
+              <span class="score-label">正确率</span>
+              <strong id="correctRate">0%</strong>
+            </div>
+            <div>
+              <span class="score-label">错误率</span>
+              <strong id="wrongRate">0%</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="workspace">
+          <section class="clock-panel" aria-label="随机时钟">
+            <div class="clock" aria-hidden="true">
+              <svg class="clock-svg" viewBox="0 0 240 240">
+                <circle class="clock-rim" cx="120" cy="120" r="112"></circle>
+                <circle class="clock-face" cx="120" cy="120" r="104"></circle>
+                <g id="minuteTicks"></g>
+                <g id="clockNumbers"></g>
+                <line class="hand hour-hand" id="hourHand" x1="120" y1="120" x2="120" y2="65"></line>
+                <line class="hand minute-hand" id="minuteHand" x1="120" y1="120" x2="120" y2="35"></line>
+                <circle class="pin" cx="120" cy="120" r="8"></circle>
+              </svg>
+            </div>
+            <div class="answer-line" id="feedback" role="status" aria-live="polite">看时针和分针，点击答案。</div>
+          </section>
+
+          <section class="controls" aria-label="填写答案">
+            <div class="selected-answer">
+              <div>
+                <span>小时</span>
+                <strong id="selectedHour">?</strong>
+              </div>
+              <div>
+                <span>分钟</span>
+                <strong id="selectedMinute">??</strong>
+              </div>
+            </div>
+
+            <div class="picker-block">
+              <h2>选择小时</h2>
+              <div class="hour-grid" id="hourGrid"></div>
+            </div>
+
+            <div class="picker-block minute-block">
+              <h2>选择分钟</h2>
+              <div class="minute-builder">
+                <div class="digit-card">
+                  <h3>十位</h3>
+                  <div class="digit-grid minute-tens-grid" id="minuteTensGrid"></div>
+                </div>
+                <div class="digit-card">
+                  <h3>个位</h3>
+                  <div class="digit-grid minute-ones-grid" id="minuteOnesGrid"></div>
+                </div>
+              </div>
+              <div class="quick-minutes" id="quickMinutes" aria-label="常用分钟"></div>
+            </div>
+
+            <div class="actions">
+              <button class="secondary" id="clearButton" type="button">清空</button>
+              <button class="primary" id="submitButton" type="button">提交答案</button>
+              <button class="primary next" id="nextButton" type="button" hidden>下一题</button>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
